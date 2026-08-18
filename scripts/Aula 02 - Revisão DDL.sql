@@ -6,7 +6,7 @@ create table funcionario(
     pnome varchar(50) not null,
     unome varchar(50) not null,
     email varchar(50) unique,
-    endereco varchar(100), 
+    endereco varchar(100) default 'Macau-RN', 
     salario numeric(7,2), -- valor max 99999,99
     data_nasc date,
     sexo char(1),
@@ -14,16 +14,21 @@ create table funcionario(
     numero_departamento smallint,
 
     constraint funcionario_salario_check
-    check (salario >= 2000 and salario <= 15000)
+    check (salario >= 2000 and salario <= 15000),
+
+    constraint funcionario_sexo_check
+    check (sexo in ('m', 'f', 'o', 'M', 'F', 'O'))
 );
 
 
 create table departamento(
     numero smallint primary key,
     nome varchar unique,
-    cpf_gerente char(11)
+    cpf_gerente char(11),
+    data_ini date not null
 );
 
+/*
 -- Adicionar um novo atributo
 alter table departamento
 add column data_ini date;
@@ -41,8 +46,8 @@ alter table funcionario
 alter column endereco set default 'Macau-RN';
 
 -- Excluir um valor DEFAULT
-alter table funcionario
-alter column endereco drop default;
+-- alter table funcionario
+-- alter column endereco drop default;
 
 -- Adicionar restrição (constraint) CHECK
 alter table funcionario
@@ -63,3 +68,21 @@ on delete no action
 on update cascade;
 
 -- TO DO: adicionar restrições para cpf_supervisor e cpf_gerente
+alter table funcionario
+add constraint funcionario_cpf_sup_fk
+foreign key (cpf_supervisor)
+references funcionario(cpf)
+
+-- no action, set null, restrict, cascade, set default
+on delete set null
+on update cascade;
+
+alter table departamento
+add constraint departamento_cpf_gerente_fk
+foreign key (cpf_gerente)
+references funcionario(cpf)
+
+-- no action, set null, restrict, cascade, set default
+on delete set null
+on update cascade;
+*/
