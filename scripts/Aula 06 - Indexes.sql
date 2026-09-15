@@ -117,3 +117,36 @@ where
     - Para forçar o uso dos índeces em tabelas pequenas: SET enable_seqcan = off;
 
 */
+
+
+select
+
+
+from
+
+where 
+    -- 1) Busca título e corpo que conteham as palavras 'postgresql' E 'recursos'
+    -- to_tsvector ('portuguese', title || ' ' || body) @@ to_tsquery('portuguese', 'postgres & recursos');
+    -- 2) Busca título e corpo que conteham as palavras 'eficiente' OU 'recursos'
+    -- to_tsvector ('portuguese', title || ' ' || body) @@ to_tsquery('portuguese', 'eficiente | recursos');
+    -- 3) Busca título e corpo que conteha a frase "full-text search"
+    -- to_tsvector ('portuguese', title || ' ' || body) @@ to_tsquery('portuguese', ''' full-text search ''');
+    -- 4) Busca título e corpo que NÃO conteham aa palavra 'eficiente'
+    -- to_tsvector ('portuguese', title || ' ' || body) @@ to_tsquery('portuguese', '!eficiente');
+    -- 5) Busca título e corpo que com prefixo 'con'
+    -- to_tsvector ('portuguese', title || ' ' || body) @@ to_tsquery('portuguese', 'con:*');
+
+select 
+    id,
+    title,
+    body,
+    ts_rank(
+        setweight(to_tsvector('portuguese', title), 'A') ||
+        setweight(to_tsvector('portuguese', body), 'B'),
+        to_tsquery('portuguese', 'postgresql')
+    ) rank
+from posts
+where (
+    setweight(to_tsvector('portuguese', title), 'A') ||
+    setweight(to_tsvector('portuguese', body), 'B'),
+    ) @@ to_tsquery('portuguese', 'postgresql')
