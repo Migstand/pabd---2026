@@ -282,3 +282,63 @@ where data @> '{"address": {"country": "Brasil"}}';
 select id, data ->> 'first_name' first_name
 from employee_json
 where data @> '{"skills": ["react", "sql"]}';
+
+-- ## OPERADORES DE EXISTÊNCIA DE CHAVE
+
+-- ? Verifica se a chave existe
+select id, data ->> 'first_name' first_name
+from employee_json
+where data ? 'salary';
+
+-- Existência de chave dentro do objeto aninhado 'address'
+select id, data ->> 'first_name' first_name
+from employee_json
+where data  -> 'address' ? 'state';
+
+-- ?| Verifica se qualquer uma das chaves dentro de array existem
+select id, data ->> 'first_name' first_name
+from employee_json
+where data ?| array['salary', 'active'];
+
+-- ?& Verifica se TODAS das chaves dentro de array existem
+select id, data ->> 'first_name' first_name
+from employee_json
+where data ?& array['salary', 'active'];
+
+-- # OPERADORES DE CAMINHO (json_path_ops)
+
+-- @? Verifica se o caminho retorna algum item
+-- $ Representa o jsonb (data)
+-- @ Representa o item atual no caminho
+select id, data ->> 'first_name' first_name, data ->> 'salary' salary
+from employee_json
+where data @? '$.salary ? (@ > 5000)';
+
+select id, data ->> 'first_name' first_name, data ->> 'salary' salary
+from employee_json
+where data @? '$.skills[*] ? (@ == "sql")';
+
+-- @@
+select id, data ->> 'first_name' first_name, data ->> 'salary' salary
+from employee_json
+where data @@ '$.salary > 5000 && $active == true';
+
+drop index if exists idx_employee_json_gin;
+create index idx_employee_json_gin on employee_json using gin(data);
+
+explain analyze
+select id, data->> 'first_name' first_name
+from employee_json
+where data @>  '{"first_name": "Gael"}';
+
+-- Se sua busca utiliza somente @>, @? e @@ (jsonb_path_ops)
+drop index if exists idx_employee_json_gin;
+create index idx_employee_json_gin 
+    on employee_json 
+    using gin(data json_path_ops);
+
+-- Se sua busca concentra-se somente em uma chave (first_name)
+drop index if exists idx_employee_json_gin;
+create index idx_employee_json_gin 
+    on employee_json 
+    using gin((data -> 'first_name')json_path_ops);
