@@ -84,13 +84,13 @@ class Customer(models.Model):
         db_table = 'customer'
 
 
-class CustomerRentalStats(models.Model):
-    customer_id = models.IntegerField(primary_key=True)
-    total_rentals = models.IntegerField()
+class CustomerSpending(models.Model):
+    customer = models.OneToOneField(Customer, models.DO_NOTHING, primary_key=True)
+    total = models.DecimalField(max_digits=10, decimal_places=5)  # max_digits and decimal_places have been guessed, as this database handles decimal fields as float
 
     class Meta:
         managed = False
-        db_table = 'customer_rental_stats'
+        db_table = 'customer_spending'
 
 
 class Film(models.Model):
