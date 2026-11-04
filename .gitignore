@@ -1,3 +1,11 @@
 listas/teste01.md
 f1db-sql-postgresql.sql
 api/env
+__pycache__/
+__init__.py
+
+#git rm -r --cahed --igonre-unmatch -- ':(glob)**/__pycache__' ':(glob)**/__init__.py'
+#git add.igonre
+#git status
+#git commit -m ""
+#git push --force origin main
