@@ -1,23 +1,51 @@
-from django.shortcuts import render
+from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-# Create your views here.
-from rest_framework import mixins, viewsets
 
 from . import serializers
 from . import models
 from . import services
 
+from drf_spectacular.utils import (
+    OpenApiResponse,
+    extend_schema,
+)
+from rest_framework.permissions import (
+    IsAdminUser,
+    IsAuthenticated,
+)
+from rest_framework.generics import RetrieveAPIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated
+
+class ReadOnlyListViewSet(
+    mixins.ListModelMixin,
+    viewsets.GenericViewSet,
+):
+    pagination_class = None
+    permission_classes = [IsAuthenticated]
+
+class UserProfileView(RetrieveAPIView):
+    serializer_class = serializers.UserProfileSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
+
 class ReadOnlyListViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     pagination_class = None
+    permission_classes = [AllowAny]
 
 
 class ActorViewSet(ReadOnlyListViewSet):
     queryset = models.Actor.objects.all()
     serializer_class = serializers.ActorSerializer
+    permission_classes = [AllowAny]
 
 
 class AddressViewSet(ReadOnlyListViewSet):
+    permission_classes = [AllowAny]
     queryset = models.Address.objects.all()
     serializer_class = serializers.AddressSerializer
 
@@ -41,17 +69,16 @@ class CustomerViewSet(ReadOnlyListViewSet):
     queryset = models.Customer.objects.all()
     serializer_class = serializers.CustomerSerializer
 
-    # detail = True - ação aplicada a um único objeto
-    # api/customers/{pk}/url_path
-    @action(detail=True, methods=["get"], url_path="total_spent")
+    # detail=True - ação é aplicada a um único objeto
+    # rota criada - /api/customers/{pk}/total-spent
+    @action(detail=True, methods=["get"], url_path="total-spent")
     def total_spent(self, request, pk=None):
         customer = self.get_object()
         total_spent = services.customer_total_spent(customer.customer_id)
-        return self.response({
-            "customer_id": customer.customer_id,
-            "total_spent": total_spent
-        })
-        
+        return Response(
+            {"customer_id": customer.customer_id, "total_spent": total_spent}
+        )
+
 
 class CustomerSpendingViewSet(ReadOnlyListViewSet):
     queryset = models.CustomerSpending.objects.all()
@@ -61,12 +88,24 @@ class CustomerSpendingViewSet(ReadOnlyListViewSet):
 class FilmViewSet(ReadOnlyListViewSet):
     queryset = models.Film.objects.all()
     serializer_class = serializers.FilmSerializer
+    permission_classes = [AllowAny]
+
+    def _validated_length_range(self, request):
+        # request.query_params contém os parâmetros enviados na URL
+        query_serializer = serializers.FilmLengthRangeSerializer(
+            data=request.query_params
+        )
+        query_serializer.is_valid(raise_exception=True)
+        return query_serializer.validated_data
 
     # api/films/by-length/?len_from=90&len_to=120
     @action(detail=False, methods=["get"], url_path="by-length")
     def by_length(self, request):
-        # TO DO: Criar serializer
-        films = services.films_by_length(len_from, len_to)
+        length_range = self._validated_length_range(request)
+        films = services.films_by_length(
+            length_range["len_from"], length_range["len_to"]
+        )
+        return Response(films)
 
 
 class FilmActorViewSet(ReadOnlyListViewSet):
@@ -97,6 +136,34 @@ class PaymentViewSet(ReadOnlyListViewSet):
 class RentalViewSet(ReadOnlyListViewSet):
     queryset = models.Rental.objects.all()
     serializer_class = serializers.RentalSerializer
+    def get_permissions(self):
+        if self.action == "register":
+            return [IsAdminUser()]
+
+        return [IsAuthenticated()]
+
+    @extend_schema(
+        request=serializers.RegisterRentalSerializer,
+        responses={
+            201: OpenApiResponse(
+                description=(
+                    "Aluguel e pagamento registrados."
+                ),
+            ),
+        },
+    )
+
+    @action(detail=False, methods=["post"], url_path="register")
+    def register(self, request):
+        input_serializer = serializers.RegisterRentalSerializer(data=request.data)
+        input_serializer.is_valid(raise_exception=True)
+
+        services.register_rental_with_payment(**input_serializer.validated_data)
+
+        return Response(
+            {"detail": "Aluguel registrado!"},
+            status=201,
+        )
 
 
 class StaffViewSet(ReadOnlyListViewSet):
