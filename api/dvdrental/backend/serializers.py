@@ -19,6 +19,7 @@ from .models import (
     Staff,
     Store,
 )
+
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -34,6 +35,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "email",
         )
         read_only_fields = fields
+
 
 class ActorSerializer(serializers.ModelSerializer):
     class Meta:

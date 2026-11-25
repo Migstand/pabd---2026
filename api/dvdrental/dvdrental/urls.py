@@ -2,7 +2,7 @@
 URL configuration for dvdrental project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.2/topics/http/urls/
+    https://docs.djangoproject.com/en/6.1/topics/http/urls/
 Examples:
 Function views
     1. Add an import:  from my_app import views
@@ -29,14 +29,21 @@ from rest_framework_simplejwt.views import (
 from rest_framework.permissions import AllowAny
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('api/', include('backend.urls')),
-    path('api/schema/', SpectacularAPIView.as_view(permission_classes=[AllowAny]), name='schema'),
+    path("admin/", admin.site.urls),
+    path("api/", include("backend.urls")),
     path(
-        'api/docs/',
-        SpectacularSwaggerView.as_view(url_name='schema', permission_classes=[AllowAny]),
-        name='swagger-ui',
+        "api/schema/",
+        SpectacularAPIView.as_view(permission_classes=[AllowAny]),
+        name="schema",
     ),
-    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path(
+        "api/docs/",
+        SpectacularSwaggerView.as_view(
+            url_name="schema",
+            permission_classes=[AllowAny],
+        ),
+        name="swagger-ui",
+    ),
+    path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
 ]
